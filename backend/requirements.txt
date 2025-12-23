@@ -7,3 +7,4 @@ networkx
 python-multipart
 websockets
 scapy
+python-dotenv
