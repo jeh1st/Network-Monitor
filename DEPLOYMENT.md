@@ -61,7 +61,13 @@ cd ..
 
 We will create two services: one for the Python API, one for serving the Frontend (using `serve` or similar).
 
-**1. Backend Service** (`/etc/systemd/system/netmon-backend.service`)
+**1. Backend Service**
+Run this command to create the file:
+```bash
+nano /etc/systemd/system/netmon-backend.service
+```
+
+Paste in the following content:
 ```ini
 [Unit]
 Description=Network Monitor Backend
@@ -78,13 +84,18 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-**2. Frontend Service** (`/etc/systemd/system/netmon-frontend.service`)
-*Note: For production, Nginx is better, but this is simple.*
+**2. Frontend Service**
+First, install the 'serve' utility:
 ```bash
 npm install -g serve
 ```
 
-File: `/etc/systemd/system/netmon-frontend.service`
+Then create the service file:
+```bash
+nano /etc/systemd/system/netmon-frontend.service
+```
+
+Paste in the following content:
 ```ini
 [Unit]
 Description=Network Monitor Frontend
