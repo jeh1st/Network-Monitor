@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { triggerScan, getGraphData, getAlerts } from './api';
 import NetworkTopologyApi from './components/NetworkTopology';
 import DeviceTree from './components/DeviceTree';
@@ -9,13 +9,12 @@ const App = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
-  const [alerts, setAlerts] = useState([]);
-  const [activeView, setActiveView] = useState('topology'); // 'dashboard', 'topology', 'devices', 'settings'
+  const [alerts, setAlerts] = useState<any[]>([]); // Typed as array
+  const [activeView, setActiveView] = useState('topology');
   const [editMode, setEditMode] = useState(false);
-
-  // Hold the latest graph state from the child component
   const [currentLayout, setCurrentLayout] = useState({ nodes: [], edges: [] });
   const [lastScanTime, setLastScanTime] = useState<Date | null>(null);
+  const [scanDuration, setScanDuration] = useState(4000);
 
   const saveLayout = async () => {
     console.log("Saving layout:", currentLayout);
@@ -31,21 +30,17 @@ const App = () => {
     }
   }
 
-
-
   const loadData = async () => {
     const graphData = await getGraphData();
     setNodes(graphData.nodes);
     setEdges(graphData.edges);
     if (graphData.last_update) {
-      setLastScanTime(new Date(graphData.last_update + 'Z')); // Ensure UTC
+      setLastScanTime(new Date(graphData.last_update + 'Z'));
     }
 
     const alertsData = await getAlerts();
     setAlerts(alertsData);
   };
-
-  const [scanDuration, setScanDuration] = useState(4000);
 
   useEffect(() => {
     loadData();
@@ -53,40 +48,35 @@ const App = () => {
       getAlerts().then(setAlerts);
     }, 10000);
 
-    // Fetch settings to determine scan duration
     fetch('http://localhost:8000/api/settings/env')
       .then(res => res.json())
       .then(data => {
         const lines = data.content.split('\n');
         let timeout = 2;
         let ranges = 1;
-        lines.forEach((l: string) => { // explicit type for l
+        lines.forEach((l: string) => {
           if (l.startsWith('SCAN_TIMEOUT=')) timeout = parseInt(l.split('=')[1]) || 2;
           if (l.startsWith('SCAN_RANGE=')) ranges = l.split('=')[1].split(',').length || 1;
         });
-        // Calculate duration: timeout * ranges * 1000 (ms) + 2000ms buffer
-        // e.g. 2s * 3 ranges = 6s + 2s = 8000ms
         setScanDuration((timeout * ranges * 1000) + 2500);
       })
-      .catch(e => console.error("Failed to load settings for duration Calc", e));
+      .catch(e => console.error("Failed to load settings", e));
 
     return () => clearInterval(interval);
   }, []);
 
-  const handleLayoutChange = useCallback((ns, es) => {
+  const handleLayoutChange = useCallback((ns: any, es: any) => {
     setCurrentLayout({ nodes: ns, edges: es });
   }, []);
 
   const handleScan = async () => {
     setIsScanning(true);
-    // Fire and forget: don't await the scan if it takes too long.
     try {
       triggerScan().catch(e => console.error("Background scan error:", e));
     } catch (e) {
       console.error("Scan init failed", e);
     }
 
-    // Set a dynamic timeout based on complexity
     console.log(`Scan waiting for ${scanDuration}ms`);
     setTimeout(async () => {
       try {
@@ -117,14 +107,12 @@ const App = () => {
           </div>
         </div>
       </header>
-
       <main className="main-content">
         <aside className="sidebar glass-panel">
           <button className={`nav-btn ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}>Dashboard</button>
           <button className={`nav-btn ${activeView === 'topology' ? 'active' : ''}`} onClick={() => setActiveView('topology')}>Topology Map</button>
           <button className={`nav-btn ${activeView === 'devices' ? 'active' : ''}`} onClick={() => setActiveView('devices')}>Devices</button>
           <button className={`nav-btn ${activeView === 'settings' ? 'active' : ''}`} onClick={() => setActiveView('settings')}>Settings</button>
-
           <div className="actions">
             <button
               className={`action-btn ${isScanning ? 'scanning' : ''}`}
@@ -136,16 +124,8 @@ const App = () => {
             </button>
           </div>
         </aside>
-
         <section className="visualization-area glass-panel">
-          {/* Toolbar / Header for specific views */}
-          <header style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '20px 30px',
-            borderBottom: '1px solid rgba(255,255,255,0.05)'
-          }}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 30px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <div>
               <h1 style={{ fontSize: '24px', fontWeight: '600' }}>Network Monitor</h1>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
@@ -155,11 +135,7 @@ const App = () => {
             <div style={{ display: 'flex', gap: '10px' }}>
               {activeView === 'topology' && (
                 <>
-                  <button
-                    onClick={() => setEditMode(!editMode)}
-                    className="action-btn"
-                    style={{ background: editMode ? '#ca8a04' : '' }}
-                  >
+                  <button onClick={() => setEditMode(!editMode)} className="action-btn" style={{ background: editMode ? '#ca8a04' : '' }}>
                     {editMode ? 'Done Editing' : 'Edit Graph'}
                   </button>
                   {editMode && <button onClick={() => saveLayout()} className="action-btn">Save Layout</button>}
@@ -170,9 +146,7 @@ const App = () => {
               </button>
             </div>
           </header>
-
           <section style={{ height: 'calc(100% - 140px)', position: 'relative' }}>
-            {/* Topology View - Kept mounted to preserve state */}
             <div style={{ height: '100%', width: '100%', display: activeView === 'topology' ? 'block' : 'none' }}>
               <NetworkTopologyApi
                 initialNodes={nodes}
@@ -181,17 +155,11 @@ const App = () => {
                 onLayoutChange={handleLayoutChange}
               />
             </div>
-
-            {/* Dashboard View */}
             <div style={{ padding: '30px', display: activeView === 'dashboard' ? 'block' : 'none' }}>
               <div className="stats-grid">
-                {/* ... stats ... */}
                 <div className="stat-card">
                   <h3>System Status</h3>
-                  <div className="status-indicator status-good">
-                    <span className="dot"></span>
-                    Running
-                  </div>
+                  <div className="status-indicator status-good"><span className="dot"></span>Running</div>
                 </div>
                 <div className="stat-card">
                   <h3>Devices Online</h3>
@@ -202,13 +170,10 @@ const App = () => {
                   <div className="big-number error-text">{alerts.length}</div>
                 </div>
               </div>
-
               <div style={{ marginTop: '30px' }}>
                 <h3 style={{ marginBottom: '15px' }}>Live Alerts</h3>
                 {alerts.length === 0 ? (
-                  <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', color: '#94a3b8' }}>
-                    No active alerts
-                  </div>
+                  <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', color: '#94a3b8' }}>No active alerts</div>
                 ) : (
                   <ul className="alerts-list">
                     {alerts.map((a: any, i: number) => (
@@ -221,20 +186,15 @@ const App = () => {
                 )}
               </div>
             </div>
-
-            {/* Devices View */}
             <div style={{ padding: '0', overflow: 'auto', maxHeight: '100%', display: activeView === 'devices' ? 'block' : 'none' }}>
               <DeviceTree
                 nodes={currentLayout.nodes.length > 0 ? currentLayout.nodes : nodes}
                 edges={currentLayout.edges.length > 0 ? currentLayout.edges : edges}
               />
             </div>
-
-            {/* Settings View */}
             <div style={{ height: '100%', display: activeView === 'settings' ? 'block' : 'none' }}>
               <SettingsView />
             </div>
-
           </section>
         </section>
       </main>
@@ -248,12 +208,10 @@ const SettingsView = () => {
   const [parsedSections, setParsedSections] = useState<any>({});
   const [editingSection, setEditingSection] = useState<string | null>(null);
 
-  // Simple parser for .env
   const parseEnv = (raw: string) => {
     const lines = raw.split('\n');
     const sections: any = { 'Global': [] };
     let currentSection = 'Global';
-
     lines.forEach(line => {
       if (line.trim().startsWith('# ---')) {
         currentSection = line.replace('# ---', '').replace('---', '').trim();
@@ -280,17 +238,14 @@ const SettingsView = () => {
   }, []);
 
   const handleSaveSection = async (sectionName: string, newLines: string[]) => {
-    // Reconstruct file
     let newContent = "";
     Object.keys(parsedSections).forEach(key => {
       if (key === sectionName) {
-        // Ensure the section header is preserved if it's not 'Global'
         if (key !== 'Global' && !newLines[0].startsWith('# ---')) {
           newContent += `# --- ${key} ---\n`;
         }
         newContent += newLines.join('\n') + '\n';
       } else {
-        // Preserve existing section headers
         if (key !== 'Global' && parsedSections[key].length > 0 && !parsedSections[key][0].startsWith('# ---')) {
           newContent += `# --- ${key} ---\n`;
         }
@@ -298,7 +253,6 @@ const SettingsView = () => {
       }
     });
 
-    // Save
     try {
       await fetch('http://localhost:8000/api/settings/env', {
         method: 'POST',
@@ -318,7 +272,6 @@ const SettingsView = () => {
   return (
     <div style={{ padding: '30px', height: '100%', overflow: 'auto' }}>
       <h2 style={{ marginBottom: '20px' }}>System Configuration</h2>
-
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {Object.keys(parsedSections).map(section => (
           <div key={section} style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -330,36 +283,25 @@ const SettingsView = () => {
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => setEditingSection(null)} className="action-btn" style={{ background: '#475569' }}>Cancel</button>
                   <button onClick={() => {
-                    // Grab value from textarea ID below (quick hack for state)
                     const el = document.getElementById(`edit-${section}`) as HTMLTextAreaElement;
                     if (el) handleSaveSection(section, el.value.split('\n'));
                   }} className="action-btn">Save</button>
                 </div>
               )}
             </div>
-
             {editingSection === section ? (
               <textarea
                 id={`edit-${section}`}
                 defaultValue={parsedSections[section].join('\n')}
-                style={{
-                  width: '100%', minHeight: '150px', background: '#020617',
-                  color: '#e2e8f0', border: 'none', padding: '10px',
-                  fontFamily: 'monospace', borderRadius: '4px'
-                }}
+                style={{ width: '100%', minHeight: '150px', background: '#020617', color: '#e2e8f0', border: 'none', padding: '10px', fontFamily: 'monospace', borderRadius: '4px' }}
               />
             ) : (
-              <pre style={{ color: '#cbd5e1', fontSize: '13px', overflowX: 'auto' }}>
-                {parsedSections[section].join('\n')}
-              </pre>
+              <pre style={{ color: '#cbd5e1', fontSize: '13px', overflowX: 'auto' }}>{parsedSections[section].join('\n')}</pre>
             )}
           </div>
         ))}
       </div>
-      {status && <div style={{ position: 'fixed', bottom: '20px', right: '20px', background: status.includes('Error') ? '#ef4444' : '#22c55e', padding: '10px 20px', borderRadius: '8px', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {status}
-        {status.includes('Error') && <button onClick={loadConfig} style={{ background: 'white', color: 'black', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontWeight: 'bold' }}>Retry</button>}
-      </div>}
+      {status && <div style={{ position: 'fixed', bottom: '20px', right: '20px', background: status.includes('Error') ? '#ef4444' : '#22c55e', padding: '10px 20px', borderRadius: '8px', color: '#fff' }}>{status}</div>}
     </div>
   );
 };

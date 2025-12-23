@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import ReactFlow, {
     Controls,
     Background,
@@ -164,11 +164,11 @@ const NetworkTopologyApi = ({ initialNodes, initialEdges, isInteractive, onLayou
     // Drag Logic for Attached Hidden Children
     const dragStartRef = useRef<{ id: string, x: number, y: number } | null>(null);
 
-    const onNodeDragStart = useCallback((event: any, node: Node) => {
+    const onNodeDragStart = useCallback((_event: any, node: Node) => {
         dragStartRef.current = { id: node.id, x: node.position.x, y: node.position.y };
     }, []);
 
-    const onNodeDragStop = useCallback((event: any, node: Node) => {
+    const onNodeDragStop = useCallback((_event: any, node: Node) => {
         if (!dragStartRef.current || dragStartRef.current.id !== node.id) return;
 
         const dx = node.position.x - dragStartRef.current.x;

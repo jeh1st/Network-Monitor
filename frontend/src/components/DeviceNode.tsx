@@ -1,6 +1,6 @@
 import { Handle, Position } from 'reactflow';
 import { useState } from 'react';
-import { Wifi, WifiOff, ChevronDown, ChevronRight, Server, Smartphone, Laptop, Tv, Printer, Camera } from 'lucide-react';
+import { Wifi, WifiOff, Server, Smartphone, Laptop, Tv, Printer, Camera } from 'lucide-react';
 
 const DeviceNode = ({ data, id }: any) => {
     const [expanded, setExpanded] = useState(false);
