@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+proxmoxer
+requests
+networkx
+python-multipart
+websockets
+scapy
