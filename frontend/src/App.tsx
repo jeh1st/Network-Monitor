@@ -19,7 +19,7 @@ const App = () => {
   const saveLayout = async () => {
     console.log("Saving layout:", currentLayout);
     try {
-      await fetch('http://localhost:8000/api/graph/save', {
+      await fetch(`http://${window.location.hostname}:8000/api/graph/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentLayout)
@@ -48,7 +48,7 @@ const App = () => {
       getAlerts().then(setAlerts);
     }, 10000);
 
-    fetch('http://localhost:8000/api/settings/env')
+    fetch(`http://${window.location.hostname}:8000/api/settings/env`)
       .then(res => res.json())
       .then(data => {
         const lines = data.content.split('\n');
@@ -223,7 +223,7 @@ const SettingsView = () => {
   };
 
   const loadConfig = () => {
-    fetch('http://localhost:8000/api/settings/env')
+    fetch(`http://${window.location.hostname}:8000/api/settings/env`)
       .then(res => res.json())
       .then(data => {
         setContent(data.content);
@@ -254,7 +254,7 @@ const SettingsView = () => {
     });
 
     try {
-      await fetch('http://localhost:8000/api/settings/env', {
+      await fetch(`http://${window.location.hostname}:8000/api/settings/env`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: newContent })
