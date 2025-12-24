@@ -203,7 +203,7 @@ const App = () => {
 }
 
 const SettingsView = () => {
-  const [content, setContent] = useState('');
+  const [_content, setContent] = useState('');
   const [status, setStatus] = useState('');
   const [parsedSections, setParsedSections] = useState<any>({});
   const [editingSection, setEditingSection] = useState<string | null>(null);
